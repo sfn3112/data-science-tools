@@ -160,13 +160,14 @@ class PC_Analysis:
         contribution.columns = ['CP_' + str(col) for col in contribution.columns]
         return contribution
 
-    def projection_PC_space(self, PC_a, PC_b, target, quality_ratio_a=None, quality_ratio_b=None):
+    def projection_PC_space(self, PC_a, PC_b, target=None, quality_ratio_a=None, quality_ratio_b=None):
         """ Projection of individials in the factor-plane [PC_a, PC_b] with the respected quality of representation
         quality_ratio_a and quality_ratio_b.
         parameters:
         -----------
             PC_a: [int]  order of the principal component ( x-axis in the factor-plane)
             PC_b: [int]  order of the principal component ( y-axis in the factor-plane)
+            target: [pd.Series] labels of individials
             quality_ratio_a: [float] quality representation threshold to plot the the individuals on the x-axis of the factor-plane
             quality_ratio_b: [float] quality representation threshold to plot the the individuals on the y-axis of the factor-plane
         returns:
@@ -178,38 +179,45 @@ class PC_Analysis:
 
         individuals_PC = self.individuals_coor_PC()
 
-        # individuals quality
         individuals_quality = self.individuals_quality_representation()
 
-        if not (quality_ratio_a is None) and not (quality_ratio_b is None):
-            bool_index = (individuals_quality.iloc[:, PC_a] > quality_ratio_a) & (
-                        individuals_quality.iloc[:, PC_b] > quality_ratio_b)
-            target = target.loc[bool_index]
+        # select individuals that satisfy the condition of individuals quality
+        if not (quality_ratio_a is None) or not (quality_ratio_b is None):
+            if not (quality_ratio_a is None) and not (quality_ratio_b is None):
+                bool_index = (individuals_quality.iloc[:, PC_a] > quality_ratio_a) & (
+                            individuals_quality.iloc[:, PC_b] > quality_ratio_b)
+            elif not (quality_ratio_a is None):
+                bool_index = (individuals_quality.iloc[:, PC_a] > quality_ratio_a)
+            elif not (quality_ratio_b is None):
+                bool_index = (individuals_quality.iloc[:, PC_b] > quality_ratio_b)
+
+            if not (target is None):
+                target = target.loc[bool_index]
+
             individuals_PC = individuals_PC[bool_index.to_numpy().reshape(-1), :]
             individuals_name_ = pd.Series(self.individuals_name).loc[bool_index]
-        elif not (quality_ratio_a is None):
-            bool_index = (individuals_quality.iloc[:, PC_a] > quality_ratio_a)
-            target = target.loc[bool_index]
-            individuals_PC = individuals_PC[bool_index.to_numpy().reshape(-1), :]
-            individuals_name_ = pd.Series(self.individuals_name).loc[bool_index]
-        elif not (quality_ratio_b is None):
-            bool_index = (individuals_quality.iloc[:, PC_b] > quality_ratio_b)
-            target = target.loc[bool_index]
-            individuals_PC = individuals_PC[bool_index.to_numpy().reshape(-1), :]
-            individuals_name_ = pd.Series(self.individuals_name).loc[bool_index]
+
         else:
             individuals_name_ = pd.Series(self.individuals_name)
 
         del individuals_quality
 
-        target_1 = (target == 1).to_numpy().reshape(-1)
-        target_0 = (target == 0).to_numpy().reshape(-1)
+        if (target is None) or len(target.unique())==1:
+            trace = go.Scattergl(x=individuals_PC[:, PC_a], y=individuals_PC[:, PC_b], mode='markers',
+                                 hovertext=individuals_name_, opacity=0.7,
+                                 marker={'size': 6,'line':{'width':1, 'color':'#FFA07A'}})
+            fig = go.Figure(data=[trace])
 
-        trace_1 = go.Scatter(x=individuals_PC[target_1, PC_a], y=individuals_PC[target_1, PC_b], mode='markers',
-                             marker={'size': 4}, name="y_1", hovertext=individuals_name_[target_1], opacity=0.7)
-        trace_0 = go.Scatter(x=individuals_PC[target_0, PC_a], y=individuals_PC[target_0, PC_b], mode='markers',
-                             marker={'size': 4}, name="y_0", hovertext=individuals_name_[target_0], opacity=0.7)
-        fig = go.Figure(data=[trace_1, trace_0])
+        else:
+            list_trace = []
+            for label in target.unique():
+                temp_target = (target == label).to_numpy().reshape(-1)
+                temp_trace = go.Scattergl(x=individuals_PC[temp_target, PC_a], y=individuals_PC[temp_target, PC_b], mode='markers',
+                                          name=str(label), hovertext=individuals_name_[temp_target], opacity=0.7,
+                                          marker={'size': 6,'line':{'width':1, 'color':'#FFA07A'}})
+                list_trace.append(temp_trace)
+
+            fig = go.Figure(data=list_trace)
 
         fig.update_layout(
             title={
@@ -222,5 +230,4 @@ class PC_Analysis:
             xaxis=dict(title='PC' + str(PC_a + 1), showline=True),
             yaxis=dict(title='PC' + str(PC_b + 1), showline=True))
 
-        # fig.show(config={'staticPlot':True})
         return fig
