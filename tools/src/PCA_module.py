@@ -100,8 +100,6 @@ class PC_Analysis:
         data = []
 
         for i_feature, variable_name in enumerate(list(corrOldNew_.index)):
-            # corr_coeff_x = corrOldNew[i_feature][PC_a]
-            # corr_coeff_y = corrOldNew[i_feature][PC_b]
             corr_coeff_x = corrOldNew_.iloc[i_feature, PC_a]
             corr_coeff_y = corrOldNew_.iloc[i_feature, PC_b]
             trace = go.Scatter(x=[0, corr_coeff_x], y=[0, corr_coeff_y], mode='lines+text',
@@ -120,6 +118,9 @@ class PC_Analysis:
                          'color': "black"}},
             width=880,
             height=800,
+            font={'family': "Arial",
+                  'size': 12,
+                  'color': "black"},
             shapes=[{'type': "circle", 'xref': "x", 'yref': "y", 'x0': -1, 'y0': -1, 'x1': 1, 'y1': 1,
                      'line_color': "LightSeaGreen"},
                     {'type': "line", 'x0': -1, 'y0': 0, 'x1': 1, 'y1': 0},
@@ -225,8 +226,13 @@ class PC_Analysis:
                 'y': 0.90,
                 'x': 0.5,
                 'font': {'family': "Arial",
-                         'size': 18,
+                         'size': 23,
                          'color': "black"}},
+            height= 600,
+            width = 1200,
+            font={'family': "Arial",
+                  'size': 15,
+                  'color': "black"},
             xaxis=dict(title='PC' + str(PC_a + 1), showline=True),
             yaxis=dict(title='PC' + str(PC_b + 1), showline=True))
 
